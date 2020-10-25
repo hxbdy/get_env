@@ -1,7 +1,6 @@
 #Graph the temperature, humidity, pressure and upload it to the FTP server.
-#LINE informs you when the pressure drops most recent 6 times.
 #coding: utf-8
-#2017/09/23
+#2019/09/08
 
 import numpy as np
 import matplotlib
@@ -11,17 +10,13 @@ import csv
 from pylab import *
 from ftplib import FTP
 import re
-import requests
 import os
-
-from linebot import LineBotApi
-from linebot.models import TextSendMessage
 
 MAX_RANGE=50
 URL_PATH="/var/www/html/"
 
 def drawingTemp():
-    
+
     temp=[0 for i in range(MAX_RANGE)]
     date=[0 for i in range(MAX_RANGE)]
     span=[]
@@ -42,6 +37,7 @@ def drawingTemp():
     fig=plt.figure(figsize=(16,9))
     ax=fig.add_subplot(1,1,1)
     plt.title("Temperature")
+    plt.gca().get_yaxis().get_major_formatter().set_useOffset(False)
     plt.xlabel("month/date_hour:minute")
     plt.ylabel("degree Celsius")
     plt.plot(temp,color="m")
@@ -49,10 +45,10 @@ def drawingTemp():
     grid(True)
     labels=ax.set_xticklabels(date,rotation=90,fontsize="small")
 
-    plt.savefig(URL_PATH+"temp.png")
+    plt.savefig(URL_PATH+"temp.png",bbox_inches="tight")
 
 def drawingPressure():
-    
+
     pressure=[0 for i in range(MAX_RANGE)]
     date=[0 for i in range(MAX_RANGE)]
     span=[]
@@ -71,17 +67,14 @@ def drawingPressure():
     fp.close()
 
     #Warn if the air pressure acquired in the last 6 times keeps falling
-    flg=True
-    for i in range(MAX_RANGE-5,MAX_RANGE-1):
+    for i in range(MAX_RANGE-6,MAX_RANGE-1):
         if(pressure[i]<pressure[i+1]):
-            flg=False
             break
-    if(flg):
-        sendMsgToLine("Barometric pressure keeps falling for 30 consecutive minutes")
 
     fig=plt.figure(figsize=(16,9))
     ax=fig.add_subplot(1,1,1)
     plt.title("Pressure")
+    plt.gca().get_yaxis().get_major_formatter().set_useOffset(False)
     plt.xlabel("month/date_hour:minute")
     plt.ylabel("Hectopascals")
     plt.plot(pressure,color="c")
@@ -89,10 +82,10 @@ def drawingPressure():
     grid(True)
     labels=ax.set_xticklabels(date,rotation=90,fontsize="small")
 
-    plt.savefig(URL_PATH+"pressure.png")
+    plt.savefig(URL_PATH+"pressure.png",bbox_inches="tight")
 
 def drawingHum():
-    
+
     hum=[0 for i in range(MAX_RANGE)]
     date=[0 for i in range(MAX_RANGE)]
     span=[]
@@ -113,6 +106,7 @@ def drawingHum():
     fig=plt.figure(figsize=(16,9))
     ax=fig.add_subplot(1,1,1)
     plt.title("Humidity")
+    plt.gca().get_yaxis().get_major_formatter().set_useOffset(False)
     plt.xlabel("month/date_hour:minute")
     plt.ylabel("percent")
     plt.plot(hum,color="g")
@@ -120,39 +114,16 @@ def drawingHum():
     grid(True)
     labels=ax.set_xticklabels(date,rotation=90,fontsize="small")
 
-    plt.savefig(URL_PATH+"hum.png")
+    plt.savefig(URL_PATH+"hum.png",bbox_inches="tight")
 
-def sendMsgToLine(msg):
-    Channel_Access_Token="XXXXX"
-    User_Id="XXXXX"
-    Line_Bot_Api=LineBotApi(Channel_Access_Token)
-    Line_Bot_Api.push_message(User_Id,TextSendMessage(text=msg))
-
+print("start drawing Temp...")
 drawingTemp()
+print("successful")
+
+print("start drawing Pressure...")
 drawingPressure()
+print("successful")
+
+print("start drawing Hum...")
 drawingHum()
-
-ftp=FTP("FTP","USRID","PASSWRD")
-
-#only first time
-#send to html
-#fp=open("../../var/www/html/index.html","rb")
-#ftp.storbinary("STOR public_html/index.html",fp)
-#fp.close()
-
-#send http to temp
-fp=open(URL_PATH+"temp.png","rb")
-ftp.storbinary("STOR public_html/temp.png",fp)
-fp.close()
-
-#send http to pressure
-fp=open(URL_PATH+"pressure.png","rb")
-ftp.storbinary("STOR public_html/pressure.png",fp)
-fp.close()
-
-#send http to hum
-fp=open(URL_PATH+"hum.png","rb")
-ftp.storbinary("STOR public_html/hum.png",fp)
-fp.close()
-
-ftp.close()
+print("successful")
